@@ -1,0 +1,131 @@
+Hola// re-asignables
+var numeroUno = 1;
+let numeroDos = 2;
+
+numeroUno = 12;
+numeroDos = 8;
+
+numeroUno = false;
+numeroDos = true;
+
+// Imutables
+
+const configuracionArchivos = 'PDF';
+
+// Primitivas
+const numero = 1;
+const sueldo = 1.2;
+const texto = "Adri";
+const apellidos = "Eguez";
+const boolean = true;
+const hijos = null;
+const zapatos = undefined;
+
+console.log(typeof  numero )
+console.log(typeof  sueldo )
+console.log(typeof  texto )
+console.log(typeof  apellidos )
+console.log(typeof  boolean )
+console.log(typeof  hijos )
+console.log(typeof  zapatos )
+
+// Truty Falsy
+if (""){
+    console.log("String vacio es Truty")
+} else {
+    console.log("String vacio es Falsy")
+}
+
+if ("Ariel"){
+    console.log("String Ariel es Truty")
+} else {
+    console.log("String Ariel es Falsy")
+}
+// Los positivos son verdaderos pero el 0 y negativos es falso
+if (0){
+    console.log("String 0 es Truty")
+} else {
+    console.log("String 0 es Falsy")
+}
+//
+if (undefined){
+    console.log("String null es Truty")
+} else {
+    console.log("String null es Falsy")
+}
+
+if (undefined){
+    console.log("String undefained es Truty")
+} else {
+    console.log("String undefained es Falsy")
+}
+
+// Se copia por valor
+let padres = {
+    madre: "Janeht"
+}
+let ariel = {
+    "nombre": 'Ariel',
+    edad: 22,
+    ropa: {
+        color: 'plomo'
+    },
+    ...padres
+}
+console.log(ariel)
+
+padres = {
+    madre: "Janeht",
+    padre: "Miguel"
+}
+
+console.log(ariel)
+
+// Acceder a las propiedadades
+
+ariel.nombre;
+ariel["nombre"]
+
+// cambiar valores , aunque ariel sea constante eso no significa que sus atributos sean constantes
+// la variable ariel no puede ser reasignada
+ariel.nombre = "Marcelo";
+
+// Crear atributos o métodos dentro de un objeto
+ariel.sueldo // undefined
+ariel.sueldo = 3; // Ok
+ariel['sueldo'] = 4; // OK
+
+// Borrar el valor de una prop
+console.log(Object.keys(ariel))
+ariel.nombre = undefined;
+console.log(Object.keys(ariel))// el nombre existe
+console.log(Object.values(ariel)) // el valor es undefained
+// borrar la clave
+delete ariel.nombre;
+console.log(Object.keys(ariel))
+
+
+// Por valor o por referencia
+// las primitivas son por valor , number , string , boolean
+let edad = 23
+let edadJuan = edad; // variables se guardan por valor
+edad = edad + 1
+console.log(edad) // solo edad cambia su valor
+console.log(edadJuan)
+
+// Se copian valores por referencia
+let notas = {
+    final: 10
+}
+let notasBi = notas;
+notasBi.final = notasBi.final + 1
+console.log(notas) // 11
+console.log(notasBi)// 11
+
+// Clonar Objetos
+let notasBi2 = Object.assign({}, notas)
+// con arreglos tambien vale
+notasBi2.final = notasBi2.final + 1
+console.log(notas)
+console.log(notasBi2)
+
