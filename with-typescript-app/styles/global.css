@@ -1,0 +1,8 @@
+/*styel/gloabal.css*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+a {
+  color: red;
+}
