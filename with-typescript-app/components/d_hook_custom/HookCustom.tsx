@@ -1,24 +1,11 @@
-// components/HookCustom.ts
 import useSelectMoneda from "../hooks/useSelectMoneda";
 import {useEffect, useState} from "react";
+import {MONEDAS} from "./monedas";
 
 export default function () {
     const [moneda, UseSelectMonedas] = useSelectMoneda(
         'Moneda',
-        [
-            {
-                id: 'USD', nombre: 'Dolar Estados Unidos'
-            },
-            {
-                id: 'MXN', nombre: 'Peso mexicano'
-            },
-            {
-                id: 'EUR', nombre: 'Euro'
-            },
-            {
-                id: 'GBP', nombre: 'Libra esterlina'
-            }
-        ]
+        MONEDAS
     )
     useEffect(
         ()=>{
