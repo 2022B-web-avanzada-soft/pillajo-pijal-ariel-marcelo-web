@@ -1,41 +1,49 @@
 import {useState} from "react";
 
 type PropiedadesComponente = {
-    texto: string;
-    numero: number;
-    booleano?: boolean;
-}
-
-export default function Componente(props: PropiedadesComponente) {
-    const  { texto, numero, booleano } = props;
-    // hooks de react donde iteración guarda la variable y setIteracion
-    // es la función que permite cambiar el valor de la variable
-    // el valor inicial será el que le de el número
-    const [iteracion, setIteracion] = useState(numero);
-    // DEVOLVER HTML
+    url: string;
+    iteraciones: number;
+    mostrar?: boolean;
+};
+// interface PropiedadesComponente{
+//
+// }
+export default function (props: PropiedadesComponente){
+    const { url, iteraciones, mostrar } = props;
+    // const arreglo = [ 1, 0 ];
+    // const numeroUno = arreglo[0];
+    // const numeroDos = arreglo[0];
+    // const [ numeroUno, numeroDos ] = [ 1, 0 ];
+    // Hooks
+    const [iteracion, setIteracion] = useState(iteraciones);
+    // const url = props.url;
+    // const iteraciones = props.iteraciones;
+    // const mostrar = props.mostrar;
     const contenidoCondicional: () => (JSX.Element) = ()=>{
-        if(booleano){
+        if(mostrar){
             return <p>Hola</p>
         }
         return <></>
     };
     return (
-
         <>
-            <p> {texto}</p>
+            <a target="_blank" href={url}>IR A GOOGLE</a>
+            {/*{mostrar ? <p>Hello</p> : <></>}*/}
             {contenidoCondicional()}
-            {booleano && <p> Hola </p>}
-            {booleano ? <p> {numero}</p> : <p> No hay numero</p>}
-            <div >
+            { mostrar &&
+                <h1>Si muestra</h1>
+            }
+
+
+            <div>
                 {iteracion}
             </div>
-            <button
-                onClick={
-                    () => {
-                        setIteracion(iteracion + 1);
-                    }
+            <button className="bg-blue-500" onClick={
+                (event)=> {
+                    console.log(event);
+                    setIteracion(iteracion + 1);
                 }
-            > Aumentar </button>
+            }> Aumentar </button>
         </>
     )
 }
