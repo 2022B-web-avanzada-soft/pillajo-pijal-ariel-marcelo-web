@@ -7,11 +7,14 @@ import {
     SolicitudPartidaForm,
     ResponseSolicitudPartida,
     Carta,
-    ResponseCartas
+    ResponseCartas,
+    Score,
 } from "../interfaces";
 // Websocket
 const servidorWebsocket = "http://localhost:11202";
 const socket = io(servidorWebsocket);
+// Order
+const values = ['ACE','2', '3', '4', '5', '6', '7',  'JACK', 'QUEEN', 'KING'];
 // Estilos
 const estiloImg = {
     width: '100px',
@@ -24,8 +27,9 @@ export default function () {
     const [deck_id, setDeck_id] = useState<string | null>(null);
     const [partidaInfo, setPartidaInfo] = useState<SolicitudPartidaForm>({salaId: '', nombre: ''});
     const [cardsOnTable, setCardsOnTable] = useState<Map<string, Carta[]>>(new Map());
-    const [puntaje, setPuntaje] = useState<number>(0);
     const [message, setMessage] = useState<string>('');
+    const [score, setScore] = useState<Score>({home: 0, visitor: 0});
+    const [lastCard, setLastCard] = useState<Carta | null>(null);
 
     const {control, register, handleSubmit, formState: {errors, isValid}} = useForm({
         defaultValues: {
@@ -57,23 +61,33 @@ export default function () {
                     }
                     return newMap;
                 } );
+                setLastCard(data.carta);
             });
             socket.on('seHanLlevadoCarton', (data: {nombre: string, cartas: Carta[], sumoPuntos: boolean}) => {
-                setCardsOnTable((prev) => {
-                    const newMap = new Map(prev);
-                    const cartas = newMap.get(data.nombre) || [];
-                    data.cartas.forEach((cartaActual) => {
-                        newMap.set(data.nombre, cartas.filter((carta) => carta.code !== cartaActual.code));
-                    });
-                    return newMap;
+                // retiro
+                data.cartas.forEach((carta) => {
+                    console.log('REMUEVO LA CARTA CON EL CODIGO: ',carta.code)
+                    removeCardFromTableByCode(carta.code);
                 } );
+                // reinicio carta caida
+                setLastCard(null);
+                // subir el puntaje de visitors si sumoPuntos es true
+                if (data.sumoPuntos) {
+                    setScore((prev) => {
+                        return {
+                            ...prev,
+                            visitor: prev.visitor + 2,
+                        }
+                    })
+                }
             });
             socket.on(
                 'nuevoMazo',
                 (data: {mazo_id: string | null }) => {
                     // Limpiar Mesa de Juego
                     setCardsOnTable(new Map());
-
+                    // reinicio carta caida
+                    setLastCard(null);
                     if (data.mazo_id !== null) {
                         setDeck_id(data.mazo_id);
                     }
@@ -89,7 +103,7 @@ export default function () {
     );
 
     useEffect(() => {
-        if (puntaje == 40) {
+        if (score.home === 40) {
             socket.emit(
                 'definirGanador',
                 {salaId: partidaInfo.salaId, nombre: partidaInfo.nombre},
@@ -98,8 +112,7 @@ export default function () {
                 }
             )
         }
-
-    } , [puntaje])
+    } , [score])
 
     const  enviarSolicitudPartida = (data: SolicitudPartidaForm) => {
         const basicInformation = {
@@ -134,7 +147,9 @@ export default function () {
             } );
         }
     }
-    const lanzarCarta = async (carta: Carta) => {
+    // Lanzar carta
+    const lanzarCarta = (carta: Carta) => {
+
         const cartaLanzada = {
             salaId: partidaInfo.salaId,
             nombre: partidaInfo.nombre,
@@ -145,37 +160,54 @@ export default function () {
         Array.from(cardsOnTable.keys()).forEach((key) => {
             // Comprobar si la carta que lanzo tiene el mismo valor que una de las cartas de mi oponente
             if (key !== partidaInfo.nombre) {
-                const cartasOponente = cardsOnTable.get(key) || [];
-                const cartaOponente = cartasOponente.find((carta) => carta.value === cartaLanzada.carta.value);
                 // Si la carta de mi oponente coincide con la carta que lanzo
-                if (cartaOponente) {
+                if (carta.value === lastCard?.value) {
                     // Aumento mi puntaje
                     sumoPuntos = true;
-                    setPuntaje((prev) => prev + 2);
+                    setScore((prev) => {
+                        return {
+                            ...prev,
+                            home: prev.home + 2,
+                        }
+                    });
+                    // Instancio el objeto que voy a enviar al servidor con las cartas que me llevo
                     const cartaARemover = {
                         salaId: partidaInfo.salaId,
                         nombre: key,
-                        cartas: [cartaOponente],
+                        cartas: [lastCard],
                         sumoPuntos: sumoPuntos,
                     }
-                    // Indico a mi oponente que cartas ya no estan en la mesa
+                    // Retiro la carta de mi oponente del front
+                    removeCardFromTableByCode(lastCard.code);
+
+                    // Busco en todas las cartas de la mesa si hay un valor siguiente
+                    let index = values.indexOf(lastCard.value);
+                    while (index != values.length - 1) { // mientras no sea la ultima carta
+                        index++;
+                        console.log('Voy a buscar si existe el valor: ' + values[index])
+                        let card = getCardOnTableByValue(values[index]);
+                        console.log('Esta es la carta que encontre: ' + card);
+                        if (card != null) {
+                            console.log('Encontre la carta: ' + card);
+                            cartaARemover.cartas.push(card);
+                            // Retiro la carta del front
+                            removeCardFromTableByCode(card.code)
+                        } else {
+                            break;
+                        }
+                    }
+                    // notificar al servidor las cartas a remover
                     socket.emit(
                         'llevoCarton',
                         cartaARemover,
                         (respuesta: {message: string}) => {
+                            console.log('Se notifico caida de cartas');
                             console.log(respuesta);
                         }
-                    )
-                    // remover la carta del oponente de la mesa
-                    setCardsOnTable((prev) => {
-                        const newMap = new Map(prev);
-                        const cartas = newMap.get(key) || [];
-                        newMap.set(key, cartas.filter((carta) => carta.code !== cartaOponente.code));
-                        return newMap;
-                    } );
-
+                    );
                 }
             }
+
         })
 
         // Si no hay cartas sobre la mesa
@@ -201,7 +233,35 @@ export default function () {
             );
         }
 
+
+
         removeCardFromMyHand(carta);
+    }
+
+    const getCardOnTableByValue =  (value: string): Carta | null => {
+        let cartaToReturn: Carta | null = null;
+        Array.from(cardsOnTable.keys()).forEach((key) => {
+            const cartasDeJugador = cardsOnTable.get(key) || [];
+            cartasDeJugador.forEach((carta) => {
+                console.log('Comparo ' + carta.value + ' con ' + value)
+                if (carta.value == value) {
+                    console.log('Encontre la carta: ' + carta)
+                    cartaToReturn = carta;
+                }
+            })
+        })
+        return cartaToReturn;
+    }
+
+    const removeCardFromTableByCode = (code: string) => {
+        setCardsOnTable((prev) => {
+            const newMap = new Map(prev);
+            Array.from(newMap.keys()).forEach((key) => {
+                const cartas = newMap.get(key) || [];
+                newMap.set(key, cartas.filter((carta) => carta.code !== code));
+            })
+            return newMap;
+        } );
     }
     const removeCardFromMyHand = (carta: Carta) => {
         setCards(cards.filter((card) => card.code !== carta.code));
@@ -231,13 +291,16 @@ export default function () {
                         }
                     </div>
                     <h1>{message}</h1>
+                    <div>
+                        <h4 className={'text-center'}> Locales: {score.home}</h4>
+                        <h4 className={'text-center'}> Visitantes: {score.visitor}</h4>
+                    </div>
                     <h1 className={'text-center'}>Mesa de Juego</h1>
                     <div className={'bg-amber-200'}>
                         {
                             Array.from(cardsOnTable).map(([key, value]) => {
                                 return (
                                     <div>
-                                        <div>{key === partidaInfo.nombre ? key + ": " + puntaje : key}</div>
                                         {
                                             value.map((card, index) => {
                                                 return <img key={index} src={card.image} alt={card.value} style={estiloImg}/>
