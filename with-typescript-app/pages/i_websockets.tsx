@@ -4,6 +4,7 @@ import {useEffect, useState} from "react";
 import MensajeChat, {MensajeChatProps} from "../components/i_websockets/MensajeChat";
 import {useForm} from "react-hook-form";
 import Layout from "../components/Layout";
+
 const servidorWebsocket = 'http://localhost:11202';
 const socket = io(servidorWebsocket);
 

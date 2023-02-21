@@ -2,24 +2,26 @@ import io from "socket.io-client";
 import {useState, useEffect} from "react";
 import {useForm} from "react-hook-form";
 import axios from "axios";
+import 'bootstrap/dist/css/bootstrap.min.css';
 import {
     SolicitudPartidaForm,
     ResponseSolicitudPartida,
     Carta,
     ResponseCartas
 } from "../interfaces";
-
+// Websocket
 const servidorWebsocket = "http://localhost:11202";
 const socket = io(servidorWebsocket);
+// Estilos
 const estiloImg = {
     width: '100px',
     height: '100px',
 }
 
-export default function (bytes: number) {
+export default function () {
     const [isConnected, setIsConnected] = useState(false);
     const [cards, setCards] = useState<Carta[]>([]);
-    const [deck_id, setDeck_id] = useState<string | null>('');
+    const [deck_id, setDeck_id] = useState<string | null>(null);
     const [partidaInfo, setPartidaInfo] = useState<SolicitudPartidaForm>({salaId: '', nombre: ''});
     const [cardsOnTable, setCardsOnTable] = useState<Map<string, Carta[]>>(new Map());
     const [puntaje, setPuntaje] = useState<number>(0);
@@ -32,6 +34,7 @@ export default function (bytes: number) {
         },
         mode: 'all'
     })
+
     useEffect(
         () => {
             socket.on("connect", () => {
@@ -41,14 +44,9 @@ export default function (bytes: number) {
                 setIsConnected(false);
             });
             socket.on('estadoSolicitudPartida',  (data: {message: String, mazo_id: string}) => {
-                console.log(data);
                 setDeck_id(data.mazo_id);
             });
             socket.on('escucharMesaDeJuego', (data: {nombre: string, carta: Carta}) => {
-                console.log('Me llegó una carta')
-                console.log(data.carta);
-                console.log('De parte de: ')
-                console.log(data.nombre);
                 setCardsOnTable((prev) => {
                     const newMap = new Map(prev);
                     if (!newMap.has(data.nombre)) {
@@ -59,23 +57,12 @@ export default function (bytes: number) {
                     }
                     return newMap;
                 } );
-
-                // Comprobar si mi oponente tiene una carta con el mismo valor
-                // const cartasOponente = cardsOnTable.get(data.nombre) || [];
-                // const cartaOponente = cartasOponente.find((carta) => carta.value === data.carta.value);
-                // if (cartaOponente) {
-                //     setPuntaje((prev) => prev + 1);
-                // }
             });
             socket.on('seHanLlevadoCarton', (data: {nombre: string, cartas: Carta[], sumoPuntos: boolean}) => {
-                console.log('Se han llevado carton');
-                console.log(data.cartas);
-
                 setCardsOnTable((prev) => {
                     const newMap = new Map(prev);
                     const cartas = newMap.get(data.nombre) || [];
                     data.cartas.forEach((cartaActual) => {
-                        console.log('THIS IS MY CODE', cartaActual.code)
                         newMap.set(data.nombre, cartas.filter((carta) => carta.code !== cartaActual.code));
                     });
                     return newMap;
@@ -103,18 +90,17 @@ export default function (bytes: number) {
 
     useEffect(() => {
         if (puntaje == 40) {
-            console.log('Gané')
             socket.emit(
                 'definirGanador',
                 {salaId: partidaInfo.salaId, nombre: partidaInfo.nombre},
                 (respuesta: {mensaje: string}) => {
-                    console.log(respuesta);
                     setMessage(respuesta.mensaje);
                 }
             )
         }
 
     } , [puntaje])
+
     const  enviarSolicitudPartida = (data: SolicitudPartidaForm) => {
         const basicInformation = {
             salaId: data.salaId,
@@ -125,19 +111,14 @@ export default function (bytes: number) {
             "solicitudPartida",
             basicInformation,
             (respuesta: ResponseSolicitudPartida) => {
-
-                console.log(respuesta);
-                console.log(respuesta.mazo_id);
                 if (respuesta.mazo_id !== null) {
                     setDeck_id(respuesta.mazo_id);
                 }
             });
     }
-
     const pedirCartas = async () => {
         const url = `https://www.deckofcardsapi.com/api/deck/${deck_id}/draw/?count=5`;
         const respuesta = await axios.get<ResponseCartas>(url);
-        console.log(respuesta.data);
         if (respuesta.data.success) {
             setCards(respuesta.data.cards);
         } else {
@@ -153,7 +134,6 @@ export default function (bytes: number) {
             } );
         }
     }
-
     const lanzarCarta = async (carta: Carta) => {
         const cartaLanzada = {
             salaId: partidaInfo.salaId,
@@ -164,18 +144,14 @@ export default function (bytes: number) {
         // Si hay cartas sobre la mesa
         Array.from(cardsOnTable.keys()).forEach((key) => {
             // Comprobar si la carta que lanzo tiene el mismo valor que una de las cartas de mi oponente
-            console.log('key recibida: ',key);
             if (key !== partidaInfo.nombre) {
-                console.log('key diferente a mi nombre')
                 const cartasOponente = cardsOnTable.get(key) || [];
                 const cartaOponente = cartasOponente.find((carta) => carta.value === cartaLanzada.carta.value);
                 // Si la carta de mi oponente coincide con la carta que lanzo
                 if (cartaOponente) {
                     // Aumento mi puntaje
                     sumoPuntos = true;
-                    setPuntaje((prev) => prev + 5);
-                    console.log('He realizado una caida')
-                    console.log('Carta a remover', cartaOponente)
+                    setPuntaje((prev) => prev + 2);
                     const cartaARemover = {
                         salaId: partidaInfo.salaId,
                         nombre: key,
@@ -201,9 +177,9 @@ export default function (bytes: number) {
                 }
             }
         })
+
         // Si no hay cartas sobre la mesa
         if (cardsOnTable.size == 0 || !sumoPuntos) {
-            console.log('No hay cartas en la mesa');
             // Pon la carta sobre la mesa
             setCardsOnTable((prev) => {
                 const newMap = new Map(prev);
@@ -213,7 +189,6 @@ export default function (bytes: number) {
                     const cartas = newMap.get(partidaInfo.nombre) || [];
                     newMap.set(partidaInfo.nombre, [...cartas, carta]);
                 }
-                console.log('Cartas en la mesa: ', newMap)
                 return newMap;
             } );
             // Lanza la carta al servidor
@@ -233,40 +208,48 @@ export default function (bytes: number) {
     }
 
     return (
-        <div>
-            <label>Give me ID class</label>
-            <form onSubmit={handleSubmit(enviarSolicitudPartida)}>
-                <input type="text" {...register('salaId')}/>
-                <input type="text" {...register('nombre')}/>
-                <button type="submit">Enviar</button>
-            </form>
-            <button onClick={() => {pedirCartas()}}>Pedir cartas</button>
-            <div>
-                {
-                    cards.map((card, index) => {
-                        return <img key={index} src={card.image} alt={card.value} style={estiloImg} onClick={()=> lanzarCarta(card)}/>
-                    })
-                }
-            </div>
-            <h1>{message}</h1>
-            <label>Cartas en la mesa</label>
-            <div>
-                {
-                    Array.from(cardsOnTable).map(([key, value]) => {
-                        return (
-                            <div>
-                                <div>{key === partidaInfo.nombre ? 'Mi Puntaje: ' : key}</div>
-                                <div>{key === partidaInfo.nombre ? puntaje : ''}</div>
-                                {
-                                    value.map((card, index) => {
-                                        return <img key={index} src={card.image} alt={card.value} style={estiloImg}/>
-                                    })
-                                }
-                            </div>
-                        )
-                    })
-                }
-            </div>
+        <div className={'container'}>
+            {deck_id === null &&
+                <form onSubmit={handleSubmit(enviarSolicitudPartida)} className={'d-flex flex-column'}>
+                    <label> <strong>Id de la sala</strong></label>
+                    <input type="text" {...register('salaId')}/>
+                    <label> <strong> Nombre </strong></label>
+                    <input type="text" {...register('nombre')}/>
+                    <button type="submit" className={'btn btn-warning mt-3'}>Unirse Partida</button>
+                </form>
+            }
+
+            {deck_id &&
+                <div>
+                    <button onClick={() => {pedirCartas()}} className={'btn btn-success mt-3'}>Pedir cartas</button>
+                    <div>
+                        {cards.length > 0 && <h4 className={'text-center'}>Cartas en mano</h4>}
+                        {
+                            cards.map((card, index) => {
+                                return <img key={index} src={card.image} alt={card.value} style={estiloImg} onClick={()=> lanzarCarta(card)}/>
+                            })
+                        }
+                    </div>
+                    <h1>{message}</h1>
+                    <h1 className={'text-center'}>Mesa de Juego</h1>
+                    <div className={'bg-amber-200'}>
+                        {
+                            Array.from(cardsOnTable).map(([key, value]) => {
+                                return (
+                                    <div>
+                                        <div>{key === partidaInfo.nombre ? key + ": " + puntaje : key}</div>
+                                        {
+                                            value.map((card, index) => {
+                                                return <img key={index} src={card.image} alt={card.value} style={estiloImg}/>
+                                            })
+                                        }
+                                    </div>
+                                )
+                            })
+                        }
+                    </div>
+                </div>
+            }
         </div>
     )
 }
