@@ -8,15 +8,15 @@ export type User = {
   id: number
   name: string
 }
-export type SolicitudPartidaForm  ={
+export type SolicitudPartidaForm  = {
   salaId: string;
   nombre: string;
 }
-export interface ResponseSolicitudPartida {
+export type ResponseSolicitudPartida = {
   message: string;
   mazo_id: string | null;
 }
-export interface Carta {
+export type Carta =  {
   code: string;
   image: string;
   images: {
@@ -26,10 +26,14 @@ export interface Carta {
   value: string;
   suit: string;
 }
-export interface ResponseCartas {
+export type ResponseCartas = {
   success: boolean;
   deck_id: string;
   cards: Carta[];
   remaining: number;
 }
 
+export type Score = {
+  home: number;
+  visitor: number;
+}
