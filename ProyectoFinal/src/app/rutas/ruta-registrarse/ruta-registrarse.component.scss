@@ -1,0 +1,44 @@
+#background{
+  background-image: url('../../../assets/img/img1.png');
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  background-size: cover;
+}
+#formulario{
+  border-radius: 30px;
+  min-width: 50vw;
+  height: 70vh;
+  position: center;
+}
+#posicionObjetos{
+  margin-top: 5%;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+.entradas{
+  margin-bottom: 2vh;
+  margin-top: 4vh;
+}
+#colorBoton{
+  background-color: #777750;
+  min-width: 20vw;
+}
+#tituloEstilo{
+  width:400px;
+  height: 60px;
+  position: absolute;
+  top: 20vh;
+  background-color: #000000;
+  color: white;
+  border-radius: 25px;
+  vertical-align: middle;
+  horiz-align: center;
+  text-align: center;
+}
+#enlace{
+  color: #ffd905;
+  text-decoration: none;
+}
+.formularioSignup {
+  background-color: rgba(0, 0, 0, 0.8);
+}

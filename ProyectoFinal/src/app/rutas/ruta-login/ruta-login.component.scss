@@ -1,0 +1,44 @@
+#background{
+  background-image: url('https://lh3.googleusercontent.com/tLYcNwodCoou9YQLjvUu1ZDbGb7ArxDDFbYh9RHRXoMUPn2vvaI3pltKZR8O_91q-T0tZTIVmRhTG0_Xq8qQCneCs8Yq-TA18m3LpWp91Q ');
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  background-size: cover;
+}
+#espacioImg{
+  margin-top: 15vh;
+}
+#formulario{
+  border-radius: 30px;
+  min-width: 40vw;
+  height: 70%;
+  position: center;
+}
+#posicionObjetos{
+  margin: 10%;
+}
+.entradas{
+  margin-bottom: 2vh;
+  margin-top: 4vh;
+}
+#colorBoton{
+  background-color: hwb(61 1% 24% / 0.521);
+  min-width: 20vw;
+}
+#imgEstilo{
+  background-color: white;
+  width:150px;
+  height:145px;
+  position: absolute;
+  top: 15vh
+}
+#enlace{
+  color: #fffb01;
+  text-decoration: none;
+}
+.formularioLogin {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+.labelLogin {
+  font-family: 'Roboto', sans-serif;
+  font-weight: bold;
+}
